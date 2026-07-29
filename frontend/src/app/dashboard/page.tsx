@@ -10,7 +10,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import LoyaltyCard from "@/components/LoyaltyCard";
 import Recommendations from "@/components/Recommendations";
 import { useAuthStore } from "@/store/authStore";
-import { Calendar, CreditCard, Heart, Star, Clock, AlertTriangle, QrCode } from "lucide-react";
+import { Calendar, CreditCard, Heart, Star, Clock, AlertTriangle, QrCode, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function CustomerDashboard() {
@@ -18,7 +18,24 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(true);
   const [showQr, setShowQr] = useState<Record<string, boolean>>({});
   const [downloading, setDownloading] = useState<Record<string, boolean>>({});
+  const [cancelling, setCancelling] = useState<Record<string, boolean>>({});
   const user = useAuthStore((s) => s.user);
+
+  const handleCancel = async (booking: any) => {
+    if (!window.confirm(`Are you sure you want to cancel booking ${booking.bookingNumber || ""}?`)) return;
+    setCancelling((prev) => ({ ...prev, [booking.id]: true }));
+    try {
+      await api.put(`/bookings/${booking.id}/cancel`);
+      toast.success("Booking cancelled successfully.");
+      const { data: res } = await api.get("/dashboard/customer");
+      setData(res.data);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "Failed to cancel booking.";
+      toast.error(msg);
+    } finally {
+      setCancelling((prev) => ({ ...prev, [booking.id]: false }));
+    }
+  };
 
   const downloadInvoice = async (booking: any, format: "pdf" | "excel") => {
     setDownloading((prev) => ({ ...prev, [booking.id]: true }));
@@ -166,6 +183,13 @@ export default function CustomerDashboard() {
                         <option value="pdf">PDF</option>
                         <option value="excel">Excel</option>
                       </select>
+                    )}
+                    {["PENDING", "CONFIRMED", "CHECKED_IN"].includes(booking.status) && (
+                      <button onClick={() => handleCancel(booking)}
+                        className="btn btn-sm btn-danger" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer", border: "none", background: "#ef4444", color: "#fff", borderRadius: "6px" }}
+                        disabled={cancelling[booking.id]}>
+                        <XCircle size={12} style={{ marginRight: "4px", display: "inline" }} />{cancelling[booking.id] ? "Cancelling..." : "Cancel"}
+                      </button>
                     )}
                   </div>
                 </div>
