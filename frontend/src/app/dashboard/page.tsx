@@ -33,7 +33,20 @@ export default function CustomerDashboard() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to download invoice");
+      let msg = "Failed to download invoice";
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          msg = json.message || msg;
+        } catch {}
+      } else if (err.response?.data) {
+        msg = err.response.data.message || err.response.data.error || msg;
+      } else {
+        msg = err.message || msg;
+      }
+      console.error("[Invoice]", msg, err);
+      toast.error(msg);
     } finally {
       setDownloading((prev) => ({ ...prev, [booking.id]: false }));
     }

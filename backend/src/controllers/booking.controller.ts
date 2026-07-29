@@ -392,7 +392,8 @@ export const downloadInvoice = async (req: AuthRequest, res: Response) => {
         { room: "Payment", type: payment ? `${payment.method.replace("_", " ")} - ${payment.status}` : "N/A", amount: "" },
       ];
 
-      return exportToExcel(res, [...summary, ...data], columns, `invoice-${booking.bookingNumber}`);
+      await exportToExcel(res, [...summary, ...data], columns, `invoice-${booking.bookingNumber}`);
+      return;
     }
 
     const doc = new jsPDF("portrait", "mm", "a4");
