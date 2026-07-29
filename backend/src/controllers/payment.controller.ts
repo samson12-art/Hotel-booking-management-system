@@ -5,6 +5,7 @@ import { paymentSchema } from "../utils/validators";
 import { sendSuccess, sendError } from "../utils/response";
 import { generateInvoiceNumber } from "../utils/helpers";
 import { getPaginationParams, buildPagination } from "../utils/pagination";
+import { transitionBookingStatus } from "../services/booking.service";
 
 export const processPayment = async (req: AuthRequest, res: Response) => {
   try {
@@ -35,7 +36,7 @@ export const processPayment = async (req: AuthRequest, res: Response) => {
     const hotel = await getOne(`SELECT name FROM hotels WHERE id = $1`, [booking.hotelId]);
 
     if (paymentStatus === "COMPLETED") {
-      await query(`UPDATE bookings SET status = 'CONFIRMED', "updatedAt" = NOW() WHERE id = $1`, [data.bookingId]);
+      await transitionBookingStatus(data.bookingId, "CONFIRMED");
     }
 
     await query(
@@ -153,10 +154,7 @@ export const refundPayment = async (req: AuthRequest, res: Response) => {
       [req.params.id]
     );
 
-    await query(
-      `UPDATE bookings SET status = 'CANCELLED', "updatedAt" = NOW() WHERE id = $1`,
-      [payment.bookingId]
-    );
+    await transitionBookingStatus(payment.bookingId, "CANCELLED");
 
     sendSuccess(res, "Payment refunded", updated);
   } catch (error: any) {
