@@ -9,7 +9,7 @@ import { generateBookingNumber, calculateNights } from "../utils/helpers";
 import { awardPoints } from "../services/loyalty";
 import { sendBookingConfirmationEmail } from "../services/email";
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import { autoTable } from "jspdf-autotable";
 
 export const createBooking = async (req: AuthRequest, res: Response) => {
   try {
@@ -424,7 +424,7 @@ export const downloadInvoice = async (req: AuthRequest, res: Response) => {
 
     doc.line(14, 92, pageWidth - 14, 92);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 97,
       head: [["Room", "Type", "Amount"]],
       body: bookingDetails.map((bd: any) => [bd.roomNumber, bd.type, `$${parseFloat(bd.price).toFixed(2)}`]),

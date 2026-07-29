@@ -38,7 +38,7 @@ export const exportToExcel = async (res: Response, data: any[], columns: ExportC
 
 export const exportToPdf = async (res: Response, title: string, data: any[], columns: ExportColumn[], filename: string) => {
   const { jsPDF } = await import("jspdf");
-  await import("jspdf-autotable");
+  const { autoTable } = await import("jspdf-autotable");
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -60,7 +60,7 @@ export const exportToPdf = async (res: Response, title: string, data: any[], col
     return r;
   });
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     columns: tableColumns,
     body: tableRows,
     startY: 35,
