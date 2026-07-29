@@ -1,0 +1,523 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  HOTEL_MANAGER
+  STAFF
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  PAYPAL
+  TELEBIRR
+  CBE_BIRR
+  CASH
+}
+
+enum RoomType {
+  STANDARD
+  DELUXE
+  SUITE
+  FAMILY
+  EXECUTIVE
+}
+
+enum RoomStatus {
+  AVAILABLE
+  RESERVED
+  OCCUPIED
+  CLEANING
+  MAINTENANCE
+}
+
+enum NotificationType {
+  REGISTRATION
+  BOOKING_CONFIRMATION
+  BOOKING_CANCELLATION
+  PAYMENT_RECEIVED
+  CHECK_IN_REMINDER
+  GENERAL
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  profilePicture String?
+  role          Role      @default(CUSTOMER)
+  isVerified    Boolean   @default(false)
+  verificationToken String?
+  resetPasswordToken  String?
+  resetPasswordExpire DateTime?
+  idDocumentUrl String?
+  idVerificationStatus String? @default("NONE")
+  idVerificationNote  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  hotels          Hotel[]
+  bookings        Booking[]
+  reviews         Review[]
+  payments        Payment[]
+  notifications   Notification[]
+  favorites       Favorite[]
+  receipts        Receipt[]
+  sentMessages    ChatMessage[]    @relation("sentMessages")
+  receivedMessages ChatMessage[]   @relation("receivedMessages")
+  loyaltyPoints   LoyaltyPoint?
+  loyaltyTransactions LoyaltyTransaction[]
+  csrfTokens      CsrfToken[]
+  auditLogs       AuditLog[]
+  recommendations Recommendation[]
+
+  @@map("users")
+}
+
+model Hotel {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  address     String
+  cityId      String
+  countryId   String
+  starRating  Int      @default(3)
+  phoneNumber String
+  email       String
+  website     String?
+  latitude    Float?
+  longitude   Float?
+  isActive    Boolean  @default(true)
+  managerId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager     User     @relation(fields: [managerId], references: [id])
+  city        City     @relation(fields: [cityId], references: [id])
+  country     Country  @relation(fields: [countryId], references: [id])
+  images      HotelImage[]
+  rooms       Room[]
+  amenities   HotelAmenity[]
+  policies    HotelPolicy[]
+  reviews     Review[]
+  bookings    Booking[]
+  favorites   Favorite[]
+  contacts    Contact[]
+  recommendations Recommendation[]
+
+  @@map("hotels")
+}
+
+model HotelImage {
+  id        String  @id @default(uuid())
+  url       String
+  alt       String?
+  isPrimary Boolean @default(false)
+  hotelId   String
+  hotel     Hotel   @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("hotel_images")
+}
+
+model Room {
+  id          String     @id @default(uuid())
+  roomNumber  String
+  type        RoomType
+  description String?
+  capacity    Int        @default(2)
+  beds        Int        @default(1)
+  bathroom    String     @default("Private")
+  price       Float
+  status      RoomStatus @default(AVAILABLE)
+  hotelId     String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  hotel            Hotel           @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  images           RoomImage[]
+  amenities        RoomAmenity[]
+  seasonalPricing  SeasonalPricing[]
+  bookingDetails   BookingDetail[]
+
+  @@unique([hotelId, roomNumber])
+  @@map("rooms")
+}
+
+model RoomImage {
+  id        String  @id @default(uuid())
+  url       String
+  alt       String?
+  isPrimary Boolean @default(false)
+  roomId    String
+  room      Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("room_images")
+}
+
+model Amenity {
+  id    String @id @default(uuid())
+  name  String @unique
+  icon  String?
+  
+  hotels    HotelAmenity[]
+  rooms     RoomAmenity[]
+
+  @@map("amenities")
+}
+
+model HotelAmenity {
+  id        String  @id @default(uuid())
+  hotelId   String
+  amenityId String
+  hotel     Hotel   @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  amenity   Amenity @relation(fields: [amenityId], references: [id])
+
+  @@unique([hotelId, amenityId])
+  @@map("hotel_amenities")
+}
+
+model RoomAmenity {
+  id        String  @id @default(uuid())
+  roomId    String
+  amenityId String
+  room      Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  amenity   Amenity @relation(fields: [amenityId], references: [id])
+
+  @@unique([roomId, amenityId])
+  @@map("room_amenities")
+}
+
+model HotelPolicy {
+  id        String  @id @default(uuid())
+  title     String
+  description String
+  hotelId   String
+  hotel     Hotel   @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("hotel_policies")
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  bookingNumber String        @unique
+  checkIn       DateTime
+  checkOut      DateTime
+  guests        Int           @default(1)
+  specialRequests String?
+  status        BookingStatus @default(PENDING)
+  totalAmount   Float
+  userId        String
+  hotelId       String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id])
+  hotel           Hotel           @relation(fields: [hotelId], references: [id])
+  bookingDetails  BookingDetail[]
+  payment         Payment?
+  review          Review?
+  receipts        Receipt[]
+  chatMessages    ChatMessage[]
+
+  @@map("bookings")
+}
+
+model BookingDetail {
+  id        String  @id @default(uuid())
+  bookingId String
+  roomId    String
+  price     Float
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  room    Room    @relation(fields: [roomId], references: [id])
+
+  @@map("booking_details")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  amount        Float
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?
+  invoiceNumber String        @unique
+  bookingId     String        @unique
+  userId        String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("payments")
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  photos    String[]
+  userId    String
+  hotelId   String
+  bookingId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  hotel   Hotel   @relation(fields: [hotelId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("reviews")
+}
+
+model Coupon {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  description   String?
+  discountPercent Float
+  maxDiscount   Float?
+  minBookingAmount Float?
+  validFrom     DateTime
+  validUntil    DateTime
+  isActive      Boolean  @default(true)
+  usageLimit    Int?
+  usedCount     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@map("coupons")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  title     String
+  message   String
+  type      NotificationType @default(GENERAL)
+  isRead    Boolean          @default(false)
+  userId    String
+  bookingId String?
+  createdAt DateTime         @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+
+  @@map("notifications")
+}
+
+model City {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  countryId String
+  country  Country   @relation(fields: [countryId], references: [id])
+  hotels   Hotel[]
+
+  @@map("cities")
+}
+
+model Country {
+  id     String @id @default(uuid())
+  name   String @unique
+  code   String @unique
+  cities City[]
+  hotels Hotel[]
+
+  @@map("countries")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  hotelId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, hotelId])
+  @@map("favorites")
+}
+
+model SeasonalPricing {
+  id        String   @id @default(uuid())
+  roomId    String
+  startDate DateTime
+  endDate   DateTime
+  price     Float
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("seasonal_pricing")
+}
+
+model Receipt {
+  id            String   @id @default(uuid())
+  fileUrl       String
+  originalName  String
+  amount        Float
+  paymentMethod String
+  status        String   @default("PENDING")
+  note          String?
+  verifiedBy    String?
+  userId        String
+  bookingId     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("receipts")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?
+  details   Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  hotelId   String?
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  hotel Hotel? @relation(fields: [hotelId], references: [id])
+
+  @@map("contacts")
+}
+
+model LoyaltyPoint {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  points      Int      @default(0)
+  tier        String   @default("BRONZE")
+  totalPoints Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("loyalty_points")
+}
+
+model LoyaltyTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  points      Int
+  type        String
+  description String?
+  referenceId String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("loyalty_transactions")
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  bookingId  String?
+  message    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User     @relation("sentMessages", fields: [senderId], references: [id])
+  receiver User     @relation("receivedMessages", fields: [receiverId], references: [id])
+  booking  Booking? @relation(fields: [bookingId], references: [id])
+
+  @@map("chat_messages")
+}
+
+model Translation {
+  id        String   @id @default(uuid())
+  locale    String
+  key       String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([locale, key])
+  @@map("translations")
+}
+
+model CurrencyRate {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  symbol    String?
+  rate      Float
+  isDefault Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@map("currency_rates")
+}
+
+model Recommendation {
+  id        String   @id @default(uuid())
+  userId    String
+  hotelId   String
+  score     Float?
+  reason    String?
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  hotel Hotel @relation(fields: [hotelId], references: [id])
+
+  @@unique([userId, hotelId])
+  @@map("recommendations")
+}
+
+model CsrfToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("csrf_tokens")
+}
+
+
