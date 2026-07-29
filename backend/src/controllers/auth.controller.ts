@@ -2,11 +2,26 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
+import dns from "dns";
+import util from "util";
 import { getOne, query } from "../config/database";
 import { registerSchema, loginSchema } from "../utils/validators";
 import { sendSuccess, sendError } from "../utils/response";
 import { AuthRequest } from "../types";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../services/email";
+
+const resolveMx = util.promisify(dns.resolveMx);
+
+const checkEmailDomain = async (email: string): Promise<boolean> => {
+  const domain = email.split("@")[1];
+  if (!domain) return false;
+  try {
+    const mxRecords = await resolveMx(domain);
+    return mxRecords.length > 0;
+  } catch {
+    return false;
+  }
+};
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 
@@ -23,6 +38,11 @@ export const register = async (req: Request, res: Response) => {
     const existingUser = await getOne(`SELECT id FROM users WHERE email = $1`, [data.email]);
     if (existingUser) {
       return sendError(res, "Email already registered.", 409);
+    }
+
+    const domainValid = await checkEmailDomain(data.email);
+    if (!domainValid) {
+      return sendError(res, "Email domain does not appear to be valid.", 400);
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
@@ -124,6 +144,11 @@ export const resendVerification = async (req: AuthRequest, res: Response) => {
     );
     if (!user) return sendError(res, "User not found.", 404);
     if (user.isVerified) return sendError(res, "Email is already verified.", 400);
+
+    const domainValid = await checkEmailDomain(user.email);
+    if (!domainValid) {
+      return sendError(res, "Email domain does not appear to be valid.", 400);
+    }
 
     const newToken = uuidv4();
     await query(

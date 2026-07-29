@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import AppShell from "@/components/AppShell";
 import RoomCard from "@/components/RoomCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import GoogleMap from "@/components/GoogleMap";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
 import { Star, MapPin, Phone, Globe, Wifi, Heart, Share2 } from "lucide-react";
@@ -85,12 +86,19 @@ export default function HotelDetailPage({ params }: { params: { id: string } }) 
             </div>
           </div>
 
-          <div className="card">
-            <h2 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "12px" }}>About</h2>
-            <p className="color-muted" style={{ lineHeight: 1.7 }}>{hotel.description}</p>
-          </div>
+            <div className="card">
+              <h2 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "12px" }}>About</h2>
+              <p className="color-muted" style={{ lineHeight: 1.7 }}>{hotel.description}</p>
+            </div>
 
-          {hotel.amenities?.length > 0 && (
+            {hotel.latitude && hotel.longitude && (
+              <div className="card">
+                <h2 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "12px" }}>Location</h2>
+                <GoogleMap latitude={hotel.latitude} longitude={hotel.longitude} />
+              </div>
+            )}
+
+            {hotel.amenities?.length > 0 && (
             <div className="card">
               <h2 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "12px" }}>Amenities</h2>
               <div className="grid-3">
