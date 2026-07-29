@@ -11,7 +11,7 @@ A full-stack Hotel Booking & Management System with **Next.js 14**, **Express.js
 
 | Layer | Technologies |
 |-------|-------------|
-| **Frontend** | Next.js 14, React 18, TypeScript, Tailwind CSS, Zustand |
+| **Frontend** | Next.js 14, React 18, TypeScript, CSS Modules, Zustand |
 | **Backend** | Node.js, Express.js, TypeScript |
 | **Database** | PostgreSQL (pg library, parameterized queries) |
 | **Auth** | JWT (access + refresh tokens), bcrypt (12 rounds) |
