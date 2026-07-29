@@ -10,7 +10,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import LoyaltyCard from "@/components/LoyaltyCard";
 import Recommendations from "@/components/Recommendations";
 import { useAuthStore } from "@/store/authStore";
-import { Calendar, CreditCard, Heart, Star, Clock, Download, AlertTriangle, QrCode } from "lucide-react";
+import { Calendar, CreditCard, Heart, Star, Clock, AlertTriangle, QrCode } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function CustomerDashboard() {
@@ -146,16 +146,13 @@ export default function CustomerDashboard() {
                       <QrCode size={12} style={{ marginRight: "4px", display: "inline" }} /> {showQr[booking.id] ? "Hide QR" : "Show QR"}
                     </button>
                     {["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"].includes(booking.status) && (
-                      <div style={{ display: "flex", gap: "4px" }}>
-                        <button onClick={() => downloadInvoice(booking, "pdf")} disabled={downloading[booking.id]}
-                          className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
-                          <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> {downloading[booking.id] ? "..." : "PDF"}
-                        </button>
-                        <button onClick={() => downloadInvoice(booking, "excel")} disabled={downloading[booking.id]}
-                          className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
-                          <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> Excel
-                        </button>
-                      </div>
+                      <select onChange={(e) => { const f = e.target.value; if (f) downloadInvoice(booking, f as "pdf" | "excel"); e.target.value = ""; }}
+                        className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer", border: "none", appearance: "auto" }}
+                        disabled={downloading[booking.id]} value="">
+                        <option value="" disabled>{downloading[booking.id] ? "Downloading..." : "Download"}</option>
+                        <option value="pdf">PDF</option>
+                        <option value="excel">Excel</option>
+                      </select>
                     )}
                   </div>
                 </div>
@@ -185,16 +182,13 @@ export default function CustomerDashboard() {
                   <BookingStatusBadge status={booking.status} />
                   <div className="amount">${booking.totalAmount.toFixed(2)}</div>
                   {["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"].includes(booking.status) && (
-                    <div style={{ display: "flex", gap: "4px", marginTop: "8px" }}>
-                      <button onClick={() => downloadInvoice(booking, "pdf")} disabled={downloading[booking.id]}
-                        className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
-                        <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> {downloading[booking.id] ? "..." : "PDF"}
-                      </button>
-                      <button onClick={() => downloadInvoice(booking, "excel")} disabled={downloading[booking.id]}
-                        className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
-                        <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> Excel
-                      </button>
-                    </div>
+                    <select onChange={(e) => { const f = e.target.value; if (f) downloadInvoice(booking, f as "pdf" | "excel"); e.target.value = ""; }}
+                      className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer", border: "none", appearance: "auto", marginTop: "8px" }}
+                      disabled={downloading[booking.id]} value="">
+                      <option value="" disabled>{downloading[booking.id] ? "Downloading..." : "Download"}</option>
+                      <option value="pdf">PDF</option>
+                      <option value="excel">Excel</option>
+                    </select>
                   )}
                 </div>
               </div>
