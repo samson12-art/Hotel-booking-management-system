@@ -17,7 +17,27 @@ export default function CustomerDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showQr, setShowQr] = useState<Record<string, boolean>>({});
+  const [downloading, setDownloading] = useState<Record<string, boolean>>({});
   const user = useAuthStore((s) => s.user);
+
+  const downloadInvoice = async (booking: any) => {
+    setDownloading((prev) => ({ ...prev, [booking.id]: true }));
+    try {
+      const res = await api.get(`/bookings/${booking.id}/invoice`, { responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${booking.bookingNumber || booking.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to download invoice");
+    } finally {
+      setDownloading((prev) => ({ ...prev, [booking.id]: false }));
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -126,28 +146,10 @@ export default function CustomerDashboard() {
                       <QrCode size={12} style={{ marginRight: "4px", display: "inline" }} /> {showQr[booking.id] ? "Hide QR" : "Show QR"}
                     </button>
                     {["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"].includes(booking.status) && (
-                      <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/bookings/${booking.id}/invoice`}
-                        target="_blank" rel="noopener noreferrer"
-                        className="btn btn-sm btn-secondary"
-                        style={{ fontSize: "12px", padding: "4px 10px" }}
-                        onClick={(e) => {
-                          const token = localStorage.getItem("token");
-                          if (token) {
-                            e.preventDefault();
-                            const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/bookings/${booking.id}/invoice`;
-                            fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-                              .then((r) => r.blob())
-                              .then((blob) => {
-                                const a = document.createElement("a");
-                                a.href = URL.createObjectURL(blob);
-                                a.download = `invoice-${booking.bookingNumber || booking.id}.pdf`;
-                                a.click();
-                              });
-                          }
-                        }}
-                      >
-                        <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> Invoice
-                      </a>
+                      <button onClick={() => downloadInvoice(booking)} disabled={downloading[booking.id]}
+                        className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
+                        <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> {downloading[booking.id] ? "..." : "Invoice"}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -177,21 +179,10 @@ export default function CustomerDashboard() {
                   <BookingStatusBadge status={booking.status} />
                   <div className="amount">${booking.totalAmount.toFixed(2)}</div>
                   {["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"].includes(booking.status) && (
-                    <a onClick={(e) => {
-                      e.preventDefault();
-                      const token = localStorage.getItem("token");
-                      if (!token) return;
-                      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/bookings/${booking.id}/invoice`, { headers: { Authorization: `Bearer ${token}` } })
-                        .then((r) => r.blob())
-                        .then((blob) => {
-                          const a = document.createElement("a");
-                          a.href = URL.createObjectURL(blob);
-                          a.download = `invoice-${booking.bookingNumber || booking.id}.pdf`;
-                          a.click();
-                        });
-                    }} href="#" className="btn btn-sm btn-secondary" style={{ marginTop: "8px", fontSize: "12px", padding: "4px 10px" }}>
-                      <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> Invoice
-                    </a>
+                    <button onClick={() => downloadInvoice(booking)} disabled={downloading[booking.id]}
+                      className="btn btn-sm btn-secondary" style={{ marginTop: "8px", fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
+                      <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> {downloading[booking.id] ? "..." : "Invoice"}
+                    </button>
                   )}
                 </div>
               </div>
