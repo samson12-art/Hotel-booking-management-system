@@ -5,16 +5,18 @@ import Link from "next/link";
 import api from "@/lib/api";
 import AppShell from "@/components/AppShell";
 import BookingStatusBadge from "@/components/BookingStatusBadge";
+import BookingQRCode from "@/components/BookingQRCode";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import LoyaltyCard from "@/components/LoyaltyCard";
 import Recommendations from "@/components/Recommendations";
 import { useAuthStore } from "@/store/authStore";
-import { Calendar, CreditCard, Heart, Star, Clock, Download, AlertTriangle } from "lucide-react";
+import { Calendar, CreditCard, Heart, Star, Clock, Download, AlertTriangle, QrCode } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function CustomerDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showQr, setShowQr] = useState<Record<string, boolean>>({});
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
@@ -109,34 +111,45 @@ export default function CustomerDashboard() {
                   <h3>{booking.hotel?.name}</h3>
                   <p>{booking.hotel?.address}</p>
                   <p><Clock size={12} style={{ display: "inline", marginRight: "4px" }} />{new Date(booking.checkIn).toLocaleDateString()} - {new Date(booking.checkOut).toLocaleDateString()}</p>
+                  {showQr[booking.id] && (
+                    <div style={{ marginTop: "12px" }}>
+                      <BookingQRCode bookingNumber={booking.bookingNumber} status={booking.status} />
+                    </div>
+                  )}
                 </div>
                 <div className="booking-card-right">
                   <BookingStatusBadge status={booking.status} />
                   <div className="amount">${booking.totalAmount.toFixed(2)}</div>
-                  {["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"].includes(booking.status) && (
-                    <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/bookings/${booking.id}/invoice`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="btn btn-sm btn-secondary"
-                      style={{ marginTop: "8px", fontSize: "12px", padding: "4px 10px" }}
-                      onClick={(e) => {
-                        const token = localStorage.getItem("token");
-                        if (token) {
-                          e.preventDefault();
-                          const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/bookings/${booking.id}/invoice`;
-                          fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-                            .then((r) => r.blob())
-                            .then((blob) => {
-                              const a = document.createElement("a");
-                              a.href = URL.createObjectURL(blob);
-                              a.download = `invoice-${booking.bookingNumber || booking.id}.pdf`;
-                              a.click();
-                            });
-                        }
-                      }}
-                    >
-                      <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> Invoice
-                    </a>
-                  )}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "8px" }}>
+                    <button onClick={() => setShowQr((prev) => ({ ...prev, [booking.id]: !prev[booking.id] }))}
+                      className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
+                      <QrCode size={12} style={{ marginRight: "4px", display: "inline" }} /> {showQr[booking.id] ? "Hide QR" : "Show QR"}
+                    </button>
+                    {["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"].includes(booking.status) && (
+                      <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/bookings/${booking.id}/invoice`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="btn btn-sm btn-secondary"
+                        style={{ fontSize: "12px", padding: "4px 10px" }}
+                        onClick={(e) => {
+                          const token = localStorage.getItem("token");
+                          if (token) {
+                            e.preventDefault();
+                            const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/bookings/${booking.id}/invoice`;
+                            fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+                              .then((r) => r.blob())
+                              .then((blob) => {
+                                const a = document.createElement("a");
+                                a.href = URL.createObjectURL(blob);
+                                a.download = `invoice-${booking.bookingNumber || booking.id}.pdf`;
+                                a.click();
+                              });
+                          }
+                        }}
+                      >
+                        <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> Invoice
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
