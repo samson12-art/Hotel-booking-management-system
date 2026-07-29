@@ -70,9 +70,11 @@ export const getHotelById = async (req: AuthRequest, res: Response) => {
     const policies = await getMany(`SELECT * FROM hotel_policies WHERE "hotelId" = $1`, [req.params.id]);
     const rooms = await getMany(
       `SELECT r.*,
-        (SELECT COALESCE(json_agg(json_build_object('id', ri.id, 'url', ri.url, 'alt', ri.alt, 'isPrimary', ri."isPrimary"))
-          FILTER (WHERE ri.id IS NOT NULL), '[]')
-         FROM room_images ri WHERE ri."roomId" = r.id) as images
+        COALESCE(
+          (SELECT json_agg(json_build_object('id', ri.id, 'url', ri.url, 'alt', ri.alt, 'isPrimary', ri."isPrimary"))
+           FROM room_images ri WHERE ri."roomId" = r.id),
+          '[]'::json
+        ) as images
        FROM rooms r WHERE r."hotelId" = $1 AND r.status = 'AVAILABLE'`,
       [req.params.id]
     );

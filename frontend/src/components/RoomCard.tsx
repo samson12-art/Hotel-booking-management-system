@@ -40,7 +40,7 @@ export default function RoomCard({ room, hotelId, selected, onSelect }: RoomCard
       style={!isAvailable ? { opacity: 0.6, pointerEvents: "none" } : undefined}
     >
       <div className="room-card-image">
-        {room.images?.[0] ? (
+        {(Array.isArray(room.images) && room.images.length > 0 && room.images[0]?.url) ? (
           <img src={`http://localhost:5000${room.images[0].url}`} alt={`Room ${room.roomNumber}`} />
         ) : (
           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", background: "var(--bg-secondary)" }}>

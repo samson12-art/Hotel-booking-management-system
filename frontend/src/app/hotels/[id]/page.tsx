@@ -24,6 +24,9 @@ export default function HotelDetailPage({ params }: { params: { id: string } }) 
     const fetchHotel = async () => {
       try {
         const { data } = await api.get(`/hotels/${params.id}`);
+        if (data.data?.rooms) {
+          console.log("Rooms debug:", data.data.rooms.map((r: any) => ({ room: r.roomNumber, images: r.images, imagesCount: r.images?.length, firstUrl: r.images?.[0]?.url })));
+        }
         setHotel(data.data);
       } catch (error) { console.error("Failed to fetch hotel:", error); }
       finally { setLoading(false); }
