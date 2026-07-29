@@ -359,7 +359,7 @@ export const downloadInvoice = async (req: AuthRequest, res: Response) => {
     }
 
     const payment = await getOne(`SELECT * FROM payments WHERE "bookingId" = $1`, [booking.id]);
-    const hotel = await getOne(`SELECT name, address, phoneNumber FROM hotels WHERE id = $1`, [booking.hotelId]);
+    const hotel = await getOne(`SELECT name, address, "phoneNumber" FROM hotels WHERE id = $1`, [booking.hotelId]);
     const user = await getOne(`SELECT "firstName", "lastName", email, phone FROM users WHERE id = $1`, [booking.userId]);
     const bookingDetails = await getMany(
       `SELECT bd.*, r."roomNumber", r.type FROM booking_details bd
