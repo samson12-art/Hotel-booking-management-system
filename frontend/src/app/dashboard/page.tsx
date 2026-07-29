@@ -113,7 +113,7 @@ export default function CustomerDashboard() {
                   <p><Clock size={12} style={{ display: "inline", marginRight: "4px" }} />{new Date(booking.checkIn).toLocaleDateString()} - {new Date(booking.checkOut).toLocaleDateString()}</p>
                   {showQr[booking.id] && (
                     <div style={{ marginTop: "12px" }}>
-                      <BookingQRCode bookingNumber={booking.bookingNumber} status={booking.status} />
+                      <BookingQRCode bookingNumber={booking.bookingNumber} status={booking.status} hotelName={booking.hotel?.name} checkIn={booking.checkIn} checkOut={booking.checkOut} guests={booking.guests} totalAmount={booking.totalAmount} />
                     </div>
                   )}
                 </div>
