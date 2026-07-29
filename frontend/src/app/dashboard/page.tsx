@@ -20,14 +20,14 @@ export default function CustomerDashboard() {
   const [downloading, setDownloading] = useState<Record<string, boolean>>({});
   const user = useAuthStore((s) => s.user);
 
-  const downloadInvoice = async (booking: any) => {
+  const downloadInvoice = async (booking: any, format: "pdf" | "excel") => {
     setDownloading((prev) => ({ ...prev, [booking.id]: true }));
     try {
-      const res = await api.get(`/bookings/${booking.id}/invoice`, { responseType: "blob" });
+      const res = await api.get(`/bookings/${booking.id}/invoice?format=${format}`, { responseType: "blob" });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `invoice-${booking.bookingNumber || booking.id}.pdf`;
+      a.download = `invoice-${booking.bookingNumber || booking.id}.${format === "excel" ? "xlsx" : "pdf"}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -146,10 +146,16 @@ export default function CustomerDashboard() {
                       <QrCode size={12} style={{ marginRight: "4px", display: "inline" }} /> {showQr[booking.id] ? "Hide QR" : "Show QR"}
                     </button>
                     {["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"].includes(booking.status) && (
-                      <button onClick={() => downloadInvoice(booking)} disabled={downloading[booking.id]}
-                        className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
-                        <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> {downloading[booking.id] ? "..." : "Invoice"}
-                      </button>
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        <button onClick={() => downloadInvoice(booking, "pdf")} disabled={downloading[booking.id]}
+                          className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
+                          <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> {downloading[booking.id] ? "..." : "PDF"}
+                        </button>
+                        <button onClick={() => downloadInvoice(booking, "excel")} disabled={downloading[booking.id]}
+                          className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
+                          <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> Excel
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -179,10 +185,16 @@ export default function CustomerDashboard() {
                   <BookingStatusBadge status={booking.status} />
                   <div className="amount">${booking.totalAmount.toFixed(2)}</div>
                   {["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"].includes(booking.status) && (
-                    <button onClick={() => downloadInvoice(booking)} disabled={downloading[booking.id]}
-                      className="btn btn-sm btn-secondary" style={{ marginTop: "8px", fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
-                      <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> {downloading[booking.id] ? "..." : "Invoice"}
-                    </button>
+                    <div style={{ display: "flex", gap: "4px", marginTop: "8px" }}>
+                      <button onClick={() => downloadInvoice(booking, "pdf")} disabled={downloading[booking.id]}
+                        className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
+                        <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> {downloading[booking.id] ? "..." : "PDF"}
+                      </button>
+                      <button onClick={() => downloadInvoice(booking, "excel")} disabled={downloading[booking.id]}
+                        className="btn btn-sm btn-secondary" style={{ fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}>
+                        <Download size={12} style={{ marginRight: "4px", display: "inline" }} /> Excel
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

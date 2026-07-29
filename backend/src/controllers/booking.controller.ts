@@ -4,6 +4,7 @@ import { AuthRequest } from "../types";
 import { bookingSchema } from "../utils/validators";
 import { sendSuccess, sendError } from "../utils/response";
 import { getPaginationParams, buildPagination } from "../utils/pagination";
+import { exportToExcel } from "../utils/export";
 import { generateBookingNumber, calculateNights } from "../utils/helpers";
 import { awardPoints } from "../services/loyalty";
 import { sendBookingConfirmationEmail } from "../services/email";
@@ -365,6 +366,34 @@ export const downloadInvoice = async (req: AuthRequest, res: Response) => {
        INNER JOIN rooms r ON bd."roomId" = r.id WHERE bd."bookingId" = $1`,
       [booking.id]
     );
+
+    const format = (req.query.format as string) || "pdf";
+
+    if (format === "excel") {
+      const columns = [
+        { header: "Room", key: "room", width: 15 },
+        { header: "Type", key: "type", width: 20 },
+        { header: "Amount", key: "amount", width: 15 },
+      ];
+      const data = bookingDetails.map((bd: any) => ({
+        room: bd.roomNumber,
+        type: bd.type,
+        amount: `$${parseFloat(bd.price).toFixed(2)}`,
+      }));
+      data.push({ room: "", type: "Total", amount: `$${parseFloat(booking.totalAmount).toFixed(2)}` });
+
+      const summary = [
+        { room: "Booking #", type: booking.bookingNumber, amount: "" },
+        { room: "Hotel", type: hotel.name, amount: "" },
+        { room: "Customer", type: `${user.firstName} ${user.lastName}`, amount: "" },
+        { room: "Check-in", type: new Date(booking.checkIn).toLocaleDateString(), amount: "" },
+        { room: "Check-out", type: new Date(booking.checkOut).toLocaleDateString(), amount: "" },
+        { room: "Status", type: booking.status.replace("_", " "), amount: "" },
+        { room: "Payment", type: payment ? `${payment.method.replace("_", " ")} - ${payment.status}` : "N/A", amount: "" },
+      ];
+
+      return exportToExcel(res, [...summary, ...data], columns, `invoice-${booking.bookingNumber}`);
+    }
 
     const doc = new jsPDF("portrait", "mm", "a4");
     const pageWidth = doc.internal.pageSize.getWidth();
