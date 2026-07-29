@@ -1,7 +1,7 @@
 "use client";
 
 import QRCode from "react-qr-code";
-import { CheckCircle, XCircle, Hotel, Calendar, Users, DollarSign } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 
 interface BookingQRCodeProps {
   bookingNumber: string;
@@ -27,23 +27,14 @@ export default function BookingQRCode({ bookingNumber, status, hotelName, checkI
   ].join("\n");
 
   return (
-    <div className="card" style={{ textAlign: "center", maxWidth: "340px" }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-        <QRCode value={qrValue} size={200} style={{ borderRadius: "8px" }} />
-      </div>
-      <div style={{ fontSize: "13px", textAlign: "left", background: "var(--bg-secondary, #f5f5f5)", padding: "12px", borderRadius: "8px" }}>
-        <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "8px", textAlign: "center" }}>{bookingNumber}</div>
-        {hotelName && <div style={{ marginBottom: "4px" }}><Hotel size={12} style={{ display: "inline", marginRight: "4px" }} />{hotelName}</div>}
-        {checkIn && <div style={{ marginBottom: "4px" }}><Calendar size={12} style={{ display: "inline", marginRight: "4px" }} />{new Date(checkIn).toLocaleDateString()} - {checkOut ? new Date(checkOut).toLocaleDateString() : ""}</div>}
-        {guests && <div style={{ marginBottom: "4px" }}><Users size={12} style={{ display: "inline", marginRight: "4px" }} />{guests} guest(s)</div>}
-        {totalAmount && <div style={{ marginBottom: "4px" }}><DollarSign size={12} style={{ display: "inline", marginRight: "4px" }} />${totalAmount.toFixed(2)}</div>}
-        <div style={{ marginTop: "8px", textAlign: "center" }}>
-          {isConfirmed ? (
-            <span className="badge badge-green"><CheckCircle size={12} /> Confirmed</span>
-          ) : (
-            <span className="badge badge-red"><XCircle size={12} /> {status}</span>
-          )}
-        </div>
+    <div style={{ textAlign: "center" }}>
+      <QRCode value={qrValue} size={180} style={{ borderRadius: "8px" }} />
+      <div style={{ marginTop: "8px" }}>
+        {isConfirmed ? (
+          <span className="badge badge-green"><CheckCircle size={12} /> Confirmed</span>
+        ) : (
+          <span className="badge badge-red"><XCircle size={12} /> {status}</span>
+        )}
       </div>
     </div>
   );
